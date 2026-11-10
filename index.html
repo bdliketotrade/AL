@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Dodge</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #080b18;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+h1 {
+  color: #00eaff;
+  text-shadow: 0 0 15px #00eaff;
+}
+
+canvas {
+  background: #10182b;
+  border: 2px solid #00eaff;
+  border-radius: 12px;
+  max-width: 95%;
+  touch-action: none;
+}
+
+button {
+  background: #00eaff;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-weight: bold;
+  margin: 12px;
+  cursor: pointer;
+}
+
+p { color: #aaa; }
+</style>
+</head>
+
+<body>
+
+<h1>⚡ NEON DODGE</h1>
+<p>Move left and right. Don't hit the red blocks!</p>
+
+<h3>Score: <span id="score">0</span></h3>
+
+<canvas id="game" width="350" height="500"></canvas>
+
+<br>
+<button onclick="startGame()">START GAME</button>
+<p>Use ← → or drag your finger to move.</p>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let player = { x: 155, y: 440, w: 40, h: 40 };
+let enemies = [];
+let score = 0;
+let running = false;
+let keys = {};
+
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+canvas.addEventListener("pointermove", e => {
+  if (!running || e.pointerType === "mouse" && e.buttons === 0) return;
+  const rect = canvas.getBoundingClientRect();
+  player.x = (e.clientX - rect.left) * canvas.width / rect.width - 20;
+});
+
+function startGame() {
+  player.x = 155;
+  enemies = [];
+  score = 0;
+  running = true;
+  loop();
+}
+
+function loop() {
+  if (!running) return;
+
+  ctx.clearRect(0, 0, 350, 500);
+
+  // Background grid
+  ctx.strokeStyle = "#1c2940";
+  for (let y = 0; y < 500; y += 50) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(350, y);
+    ctx.stroke();
+  }
+
+  // Player movement
+  if (keys["ArrowLeft"]) player.x -= 5;
+  if (keys["ArrowRight"]) player.x += 5;
+  player.x = Math.max(0, Math.min(310, player.x));
+
+  // Player
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = "#00eaff";
+  ctx.fillStyle = "#00eaff";
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+  ctx.shadowBlur = 0;
+
+  // Spawn enemies
+  if (Math.random() < 0.025) {
+    enemies.push({
+      x: Math.random() * 310,
+      y: -30,
+      w: 35,
+      h: 35
+    });
+  }
+
+  enemies.forEach((e, i) => {
+    e.y += 4 + score / 100;
+
+    ctx.fillStyle = "#ff3155";
+    ctx.shadowColor = "#ff3155";
+    ctx.shadowBlur = 15;
+    ctx.fillRect(e.x, e.y, e.w, e.h);
+    ctx.shadowBlur = 0;
+
+    // Collision
+    if (
+      player.x < e.x + e.w &&
+      player.x + player.w > e.x &&
+      player.y < e.y + e.h &&
+      player.y + player.h > e.y
+    ) {
+      running = false;
+      alert("GAME OVER! Your score: " + score);
+    }
+
+    if (e.y > 500) {
+      enemies.splice(i, 1);
+      score++;
+      document.getElementById("score").textContent = score;
+    }
+  });
+
+  if (running) requestAnimationFrame(loop);
+}
+</script>
+
+</body>
+</html>
